@@ -1,10 +1,26 @@
 from rest_framework.decorators import api_view
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import requests 
- 
+import pandas as pd
+
+df = pd.read_csv('assets/Ramon.csv')
+
+print(df)
+print()
+print()
+df_aux = df.loc[df['PRODUTO'] == 'camiseta']
+preço = df_aux['PRECO'][0]
+print(f'O preço é R$ {preço} reais')
+print()
+print()
+
 url = 'https://sheet.best/api/sheets/9bdcf020-003f-4843-a14d-7f3e11db6070/'
+
+@api_view(['GET']) 
+def home(request):
+      return HttpResponse('Hello World!')
 
 @csrf_exempt
 @api_view(['POST']) 
@@ -15,10 +31,14 @@ def webhook(request):
     produto = req.get('queryResult').get('parameters').get('produto')
    
     if action == 'preco':
-        r = requests.get(url + f'search?PRODUTO=*{produto}*')
-        if len(r.json()):
-            response = r.json()[0]
-            preço = response['PRECO']
+        # r = requests.get(url + f'search?PRODUTO=*{produto}*')
+  
+        df_aux = df.loc[df['PRODUTO'] == 'camiseta']
+        preço = df_aux['PRECO'][0]
+
+        if preço:
+            # response = r.json()[0]
+            # preço = response['PRECO']
             fulfillmentText = {'fulfillmentText': f'O preço do produto é R$ {preço}'}
         else:
             fulfillmentText = {'fulfillmentText': 'Não encontrei o produto'}
@@ -43,9 +63,9 @@ def webhook(request):
          
         output = '''Os seguintes produtos estão em promoção em nossa loja: \n'''
         for i in response:
-            output += '--' + i['PRODUTO'] + '\n\n\n\n\n'
+            output += '--' + i['PRODUTO'] + '\n'
         
-        output += 'Aproveite!'
+        output += '\n' + 'Aproveite!'
 
         if len(response):
             fulfillmentText = {'fulfillmentText': output}
